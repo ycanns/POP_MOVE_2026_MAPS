@@ -29,7 +29,7 @@
     $('region-title').textContent=`${item.name} · ${y}년 · ${labels[g]} · ${measures[m]}`;setLegend($('region-legend'),m);
     $('region-note').textContent=`선택한 ${item.name}에 겹치는 ${fmt(item.grids)}개 격자를 확대합니다. 경계에 걸친 격자는 다른 지역에 배분된 부분을 포함한 격자 전체값으로 표시하므로, 시군구별 배분 합계와 일치하지 않을 수 있습니다.`;
     try{
-      const [img,mask]=await Promise.all([loadImage(uri(g,y,m)),loadImage(root+'masks/'+item.kind+'_'+item.code+'.png')]);if(id!==request)return;
+      const [img,mask]=await Promise.all([loadImage(uri(g,y,m)),loadImage(root+'masks/'+item.kind+'_'+item.code+'.png?v=boundaries-20261029')]);if(id!==request)return;
       let buffer=document.createElement('canvas');buffer.width=catalog.width;buffer.height=catalog.height;let ctx=buffer.getContext('2d');ctx.drawImage(img,0,0);ctx.globalCompositeOperation='destination-in';ctx.drawImage(mask,0,0);
       let [x0,y0,x1,y1]=item.bbox;for(const f of selected){x0=Math.min(x0,f.bbox[0]);y0=Math.min(y0,f.bbox[1]);x1=Math.max(x1,f.bbox[2]);y1=Math.max(y1,f.bbox[3])}
       let pad=Math.max(4,Math.ceil(Math.max(x1-x0,y1-y0)*.06));x0-=pad;y0-=pad;x1+=pad;y1+=pad;
@@ -41,5 +41,5 @@
     }catch(e){if(id===request)$('region-error').textContent='지도 파일을 불러오지 못했습니다. 인터넷 연결을 확인하고 다시 선택해 주세요.'}
   }
   $('region-province').addEventListener('change',updateMunicipal);for(const n of ['city','year','group','metric','boundary','labels'])$('region-'+n).addEventListener('change',renderRegion);
-  Promise.all(['catalog.json','boundaries.json'].map(path=>fetch(root+path).then(r=>{if(!r.ok)throw Error(path);return r.json()}))).then(([data,shapes])=>{catalog=data;boundaries=shapes;select('region-province',catalog.items.filter(x=>x.kind==='province').map(x=>[x.code,x.name]),'11');updateMunicipal();setLegend($('overview-flow-legend'),'inflow');setLegend($('overview-net-legend'),'netflow');setLegend($('large-net-legend'),'netflow');for(const side of ['a','b'])setLegend($(side+'-legend'),$(side+'-metric').value)}).catch(()=>{$('region-error').textContent='지역 지도 목록을 불러오지 못했습니다. 이 화면은 HTTP 또는 GitHub Pages에서 열어 주세요.'});
+  Promise.all(['catalog.json','boundaries.json'].map(path=>fetch(root+path+'?v=boundaries-20261029').then(r=>{if(!r.ok)throw Error(path);return r.json()}))).then(([data,shapes])=>{catalog=data;boundaries=shapes;select('region-province',catalog.items.filter(x=>x.kind==='province').map(x=>[x.code,x.name]),'11');updateMunicipal();setLegend($('overview-flow-legend'),'inflow');setLegend($('overview-net-legend'),'netflow');setLegend($('large-net-legend'),'netflow');for(const side of ['a','b'])setLegend($(side+'-legend'),$(side+'-metric').value)}).catch(()=>{$('region-error').textContent='지역 지도 목록을 불러오지 못했습니다. 이 화면은 HTTP 또는 GitHub Pages에서 열어 주세요.'});
 })();
