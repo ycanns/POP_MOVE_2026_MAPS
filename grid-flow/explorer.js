@@ -6,6 +6,24 @@
   const uri=(g,y,m)=>root+'maps/'+g+'/'+y+'_'+m+'.png';
   const fmt=n=>Number(n).toLocaleString('ko-KR',{maximumFractionDigits:1});
   let catalog,boundaries;
+  const svgNS='http://www.w3.org/2000/svg';
+  function drawSido(data){
+    for(const id of ['large-net-map','a-map','b-map']){
+      const svg=$(id+'-sido'), lines=document.createElementNS(svgNS,'g'), names=document.createElementNS(svgNS,'g');
+      names.setAttribute('class','sido-names');
+      for(const f of data.features){
+        const path=document.createElementNS(svgNS,'path');
+        path.setAttribute('d',f.paths.map(r=>r.map((p,i)=>(i?'L':'M')+p[0]+' '+p[1]).join('')+'Z').join(''));lines.appendChild(path);
+        const name=document.createElementNS(svgNS,'text');name.setAttribute('x',f.label[0]);name.setAttribute('y',f.label[1]);name.textContent=f.name;names.appendChild(name);
+      }
+      svg.replaceChildren(lines,names);
+    }
+    updateSidoNames();
+  }
+  function updateSidoNames(){for(const id of ['large-net-map','a-map','b-map']){const g=$(id+'-sido').querySelector('.sido-names');if(g)g.style.display=$(id==='large-net-map'?'net-sido-names':'compare-sido-names').checked?'':'none'}}
+  for(const id of ['net-sido-names','compare-sido-names'])$(id).addEventListener('change',updateSidoNames);
+  fetch(root+'sido-boundaries.json?v=sido-20261029').then(r=>{if(!r.ok)throw Error('sido');return r.json()}).then(drawSido).catch(()=>{for(const id of ['net-sido-error','compare-sido-error'])$(id).textContent='시도 경계를 불러오지 못했습니다. 연결을 확인하고 새로고침해 주세요.'});
+
   const legend=(m)=>m==='netflow' ? `순이동 · 슬롯 사건 수 · 대칭로그 (±${fmt(catalog.net_max)}, 선형 구간 ±1)` : `유입·유출 · 슬롯 사건 수 · 로그 (0.01 ~ ${fmt(catalog.flow_max)}, 0은 흰색)`;
   function setLegend(container,m){container.textContent=legend(m);container.className='legend '+(m==='netflow'?'net':'flow')}
   function showTab(id){document.querySelectorAll('[data-view]').forEach(b=>{const active=b.dataset.view===id;b.setAttribute('aria-selected',String(active));document.getElementById('view-'+b.dataset.view).hidden=!active});if(id==='region')renderRegion()}
