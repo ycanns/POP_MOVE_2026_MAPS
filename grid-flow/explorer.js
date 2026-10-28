@@ -10,7 +10,7 @@
   function drawSido(data){
     for(const id of ['large-net-map','a-map','b-map']){
       const svg=$(id+'-sido'), lines=document.createElementNS(svgNS,'g'), names=document.createElementNS(svgNS,'g');
-      names.setAttribute('class','sido-names');
+      lines.setAttribute('class','sido-lines'); names.setAttribute('class','sido-names');
       for(const f of data.features){
         const path=document.createElementNS(svgNS,'path');
         path.setAttribute('d',f.paths.map(r=>r.map((p,i)=>(i?'L':'M')+p[0]+' '+p[1]).join('')+'Z').join(''));lines.appendChild(path);
@@ -18,10 +18,10 @@
       }
       svg.replaceChildren(lines,names);
     }
-    updateSidoNames();
+    updateSidoLayers();
   }
-  function updateSidoNames(){for(const id of ['large-net-map','a-map','b-map']){const g=$(id+'-sido').querySelector('.sido-names');if(g)g.style.display=$(id==='large-net-map'?'net-sido-names':'compare-sido-names').checked?'':'none'}}
-  for(const id of ['net-sido-names','compare-sido-names'])$(id).addEventListener('change',updateSidoNames);
+  function updateSidoLayers(){for(const id of ['large-net-map','a-map','b-map']){const svg=$(id+'-sido'), prefix=id==='large-net-map'?'net':'compare';for(const layer of ['lines','names']){const g=svg.querySelector('.sido-'+layer);if(g)g.style.display=$(prefix+'-sido-'+(layer==='lines'?'boundary':'names')).checked?'':'none'}}}
+  for(const id of ['net-sido-names','compare-sido-names','net-sido-boundary','compare-sido-boundary'])$(id).addEventListener('change',updateSidoLayers);
   fetch(root+'sido-boundaries.json?v=sido-20261029').then(r=>{if(!r.ok)throw Error('sido');return r.json()}).then(drawSido).catch(()=>{for(const id of ['net-sido-error','compare-sido-error'])$(id).textContent='시도 경계를 불러오지 못했습니다. 연결을 확인하고 새로고침해 주세요.'});
 
   const legend=(m)=>m==='netflow' ? `순이동 · 슬롯 사건 수 · 대칭로그 (±${fmt(catalog.net_max)}, 선형 구간 ±1)` : `유입·유출 · 슬롯 사건 수 · 로그 (0.01 ~ ${fmt(catalog.flow_max)}, 0은 흰색)`;
