@@ -1,8 +1,26 @@
 # 전국 순이동 지도와 검증 지표
 
+## 시각화 대시보드 바로가기
+
+### [▶ 전국 순이동 대시보드 열기](https://ycanns.github.io/POP_MOVE_2026_MAPS/)
+
+아래 링크를 누르면 GitHub 파일 화면이 아니라 실제 대화형 대시보드로 이동합니다.
+
+| 시각화 | 바로가기 |
+|---|---|
+| 전국 순이동·인구구조 제약 비교 | [대시보드 열기](https://ycanns.github.io/POP_MOVE_2026_MAPS/) |
+| 시도 통제총량 기반 인구 배분 | [인구 배분 보기](https://ycanns.github.io/POP_MOVE_2026_MAPS/population/) |
+| GAT 순이동 연결 인구 비교 | [GAT 연결 비교 보기](https://ycanns.github.io/POP_MOVE_2026_MAPS/population-gat/) |
+| 격자 인구이동 배분 시나리오 · grid-flow | [격자 지도 보기](https://ycanns.github.io/POP_MOVE_2026_MAPS/grid-flow/) |
+| 격자 인구이동 배분 시나리오 · cnn-gat | [CNN·GAT 지도 보기](https://ycanns.github.io/POP_MOVE_2026_MAPS/cnn-gat/) |
+
+각 화면의 관측·시나리오 구분과 해석상 주의사항을 함께 확인해 주세요.
+
+---
+
 집계 지도와 검증 지표만 공개하는 페이지입니다. 개인별 원자료·OD 배열·모델 객체·연구 저장소 이력은 포함하지 않습니다.
 
-[대화형 지도](index.html) · [2024–2052 전국 비교 지도 PDF](comparison_2024_2052.pdf) · [RMSE·MAE 표](metrics.csv) · [장기 이동량·시드 비교](long_range_diagnostics.png)
+[대화형 지도](https://ycanns.github.io/POP_MOVE_2026_MAPS/) · [2024–2052 전국 비교 지도 PDF](comparison_2024_2052.pdf) · [RMSE·MAE 표](metrics.csv) · [장기 이동량·시드 비교](long_range_diagnostics.png)
 
 2001~2024년 관측과 2024~2052년 시나리오를 구분합니다. 2024 화면은 기존 예측·인구 연결·관측을, 이후 화면은 기존·인구 연결·차이를 표시합니다. 지도 색상은 같은 연도 패널에 공통이며 전체기간 공통 척도도 선택할 수 있습니다.
 
