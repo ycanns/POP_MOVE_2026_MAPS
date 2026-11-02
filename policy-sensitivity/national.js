@@ -3,7 +3,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const MODES = [
-    ['birth_plus','출산율 연 +1%'],['birth_minus','출산율 연 -1%'],
+    ['birth_plus','출산율 연 +1%'],['birth_minus','출산율 연 -1%'],['birth_0p1_plus','출산율 연 +0.1%'],['birth_0p1_minus','출산율 연 -0.1%'],['birth_0p5_plus','출산율 연 +0.5%'],['birth_0p5_minus','출산율 연 -0.5%'],
     ['sejong_historical','세종 과거 순이동 역배분'],['industry_jeonnam','전남 데이터센터'],['industry_changwon','창원 AI 제조'],['industry_gangwon','강원 디지털헬스']
   ];
   const METRICS = [
