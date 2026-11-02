@@ -15,8 +15,8 @@
   ];
   const modeNames=Object.fromEntries(MODES), metricNames=Object.fromEntries(METRICS);
   const baseText = mode => mode.startsWith('industry_')
-    ? '산업 시나리오는 2024년 대상 지역의 관측 관련 업종 종사자 수 1%를 매년 대상 지역 밖의 관측 종사자 분포에서 이전하는 가정입니다. 업종별 결측이 많아 이전 규모는 불확실하며, 사업체 XGBoost의 입력 변화 반응은 0이고 GAT 권역 이동 총량은 고정됩니다.'
-    : '인구이력 XGBoost 기준선입니다. 출산·세종 가정은 공식 시도 총량에서 벗어날 수 있습니다.';
+    ? '산업 시나리오: 2024년 대상 지역의 관련 업종 관측 종사자 수 1%를 매년 대상 지역 밖의 관측 종사자 분포에서 이전한다고 가정함. 업종별 결측이 많아 이전 규모는 불확실함. 사업체 XGBoost의 입력 변화 반응은 0이며 GAT 권역 이동 총량은 고정됨.'
+    : '인구이력 XGBoost 기준선 사용. 출산·세종 가정은 공식 시도 총량에서 벗어날 수 있음.';
   function options(id, pairs, value){ const el=$(id);el.replaceChildren(...pairs.map(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;return o}));el.value=value }
   const years=Array.from({length:28},(_,i)=>[String(2025+i),`${2025+i}년`]);
   const SVG='http://www.w3.org/2000/svg';
@@ -46,10 +46,12 @@
     const mode=$(prefix+'-mode').value, y=$(prefix+'-year').value, metric=$(prefix+'-metric').value, img=$(prefix+'-image');
     img.src=`maps/${mode}/${y}_${metric}.png?v=20261103-sector1`;
     img.alt=`${y}년 ${modeNames[mode]} ${metricNames[metric]} 격자 지도`;
-    $(prefix+'-title').textContent=`${y}년 · ${modeNames[mode]} · ${metricNames[metric]}`;
+    $(prefix+'-title').textContent=prefix==='cmp-a'
+      ? `${y}년 · 기준 · ${metricNames[metric]}`
+      : `${y}년 · ${modeNames[mode]} · ${metricNames[metric]}`;
     $(prefix+'-legend').textContent=legend(metric);$(prefix+'-legend').dataset.scale=(metric==='population'||metric==='netflow'||metric.endsWith('_netflow'))?'diverging':'sequential';
     $(prefix+'-note').textContent=baseText(mode);
-    img.onerror=()=>{$(prefix+'-error').textContent='지도 파일을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.'};
+    img.onerror=()=>{$(prefix+'-error').textContent='지도 파일을 불러오지 못함. 인터넷 연결 확인 필요.'};
     img.onload=()=>{$(prefix+'-error').textContent=''};
   }
   for(const p of ['national','cmp-a','cmp-b']){
@@ -63,13 +65,27 @@
   function synchronizeComparison(){
     $('cmp-a-mode').value=$('cmp-b-mode').value;$('cmp-a-year').value=$('cmp-b-year').value;
     $('cmp-a-metric').value=$('cmp-b-metric').value.replace('scenario_','baseline_');render('cmp-a');
+    const mode=$('cmp-b-mode').value, year=$('cmp-b-year').value;
+    const metric=$('cmp-b-metric').value.replace('scenario_','');
+    const available=metric==='population'||metric==='netflow';
+    $('cmp-diff').hidden=!available;
+    if(available){
+      const img=$('cmp-diff-image');
+      $('cmp-diff-title').textContent=`${year}년 · ${modeNames[mode]} · ${metric==='population'?'인구':'순이동 배분'} 차이 (가정 − 기준)`;
+      $('cmp-diff-legend').textContent=legend(metric);
+      $('cmp-diff-legend').dataset.scale='diverging';
+      img.alt=$('cmp-diff-title').textContent+' 격자 지도';
+      img.onerror=()=>{$('cmp-diff-error').textContent='차이 지도 파일을 불러오지 못함. 인터넷 연결 확인 필요.'};
+      img.onload=()=>{$('cmp-diff-error').textContent=''};
+      img.src=`maps/${mode}/${year}_${metric}.png?v=20261103-sector1`;
+    }
   }
   for(const field of ['mode','year','metric'])$('cmp-b-'+field).addEventListener('change',synchronizeComparison);
   synchronizeComparison();
   for(const p of ['national','cmp'])for(const field of ['boundary','names'])$(p+'-'+field).addEventListener('change',()=>{
-    for(const s of p==='national'?['national']:['cmp-a','cmp-b'])visibility(s+'-svg',p);
+    for(const s of p==='national'?['national']:['cmp-a','cmp-b','cmp-diff'])visibility(s+'-svg',p);
   });
   fetch('sido-boundaries.json').then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(shapes=>{
-    for(const p of ['national','cmp-a','cmp-b']){paintShapes($(p+'-svg'),shapes);visibility(p+'-svg',p==='national'?'national':'cmp')}
-  }).catch(()=>{for(const p of ['national','cmp-a','cmp-b'])$(p+'-error').textContent='시도 경계 파일을 불러오지 못했습니다.'});
+    for(const p of ['national','cmp-a','cmp-b','cmp-diff']){paintShapes($(p+'-svg'),shapes);visibility(p+'-svg',p==='national'?'national':'cmp')}
+  }).catch(()=>{for(const p of ['national','cmp-a','cmp-b','cmp-diff'])$(p+'-error').textContent='시도 경계 파일을 불러오지 못함.'});
 })();

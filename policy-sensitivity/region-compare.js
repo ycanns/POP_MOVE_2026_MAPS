@@ -67,14 +67,22 @@
     }
     return ready;
   }
-  function setLegend(side, metric) {
-    const legend = el(side, 'legend');
-    legend.textContent = metric === 'population' ? '인구 차이 · 명 · 대칭로그 (±1,000, 선형 ±1)' :
+  function legendText(metric) {
+    return metric === 'population' ? '인구 차이 · 명 · 대칭로그 (±1,000, 선형 ±1)' :
       metric === 'netflow' ? '순이동 배분 차이 · 이동자 슬롯 사건 · 대칭로그 (±100, 선형 ±0.1)' :
       metric.endsWith('_population') ? '인구 · 명 · 로그 (0.01~100,000, 0은 흰색)' :
       metric.endsWith('_netflow') ? '순이동 배분 · 이동자 슬롯 사건 · 대칭로그 (±1,200, 선형 ±1)' :
       '유입·유출 배분 · 이동자 슬롯 사건 · 로그 (0.01~6,000, 0은 흰색)';
-    legend.dataset.scale = metric === 'population' || metric === 'netflow' || metric.endsWith('_netflow') ? 'diverging' : 'sequential';
+  }
+  function setLegends() {
+    const ma=el('a','metric').value, mb=el('b','metric').value;
+    const same=legendText(ma)===legendText(mb);
+    for (const [side, metric] of [['a',ma],['b',mb]]) {
+      const legend=el(side,'legend');
+      legend.textContent=(same ? '공통 범례 · ' : `시나리오 ${side.toUpperCase()} 범례 · `)+legendText(metric);
+      legend.dataset.scale=metric==='population'||metric==='netflow'||metric.endsWith('_netflow')?'diverging':'sequential';
+      legend.hidden=same&&side==='b';
+    }
   }
   async function render(side) {
     const call = ++requests[side];
@@ -86,16 +94,16 @@
       const province = el(side, 'province').value, city = el(side, 'city').value;
       const kind = city ? 'municipal' : 'province', code = city || province;
       const item = catalog.items.find(x => x.kind === kind && x.code === code);
-      if (!item || !modes[mode] || !metrics[metric]) throw new Error('선택 항목을 찾지 못했습니다');
+      if (!item || !modes[mode] || !metrics[metric]) throw new Error('선택 항목을 찾지 못함');
       const selected = boundaries.features.filter(f => city ? f.code === city : f.province === province);
       const title = `${item.name} · ${year}년 · ${modes[mode]} · ${metrics[metric]}`;
       el(side, 'title').textContent = title;
-      el(side, 'note').textContent = `${item.name}에 겹치는 ${fmt(item.grids)}개 격자를 확대합니다. 경계에 걸친 격자는 다른 지역 부분을 포함한 전체값이므로 지역별 합계와 다를 수 있습니다. 군위군은 대구에 표시되며 기준 시도 총량 정산은 경북 기준입니다.`;
-      setLegend(side, metric);
+      el(side, 'note').textContent = `${item.name}에 겹치는 ${fmt(item.grids)}개 격자를 확대함. 경계에 걸친 격자는 다른 지역 부분을 포함한 전체값이므로 지역별 합계와 다를 수 있음. 군위군은 대구에 표시되며 기준 시도 총량 정산은 경북 기준임.`;
+      setLegends();
       const pendingCanvas = el(side, 'map');
       pendingCanvas.getContext('2d').clearRect(0, 0, pendingCanvas.width, pendingCanvas.height);
       pendingCanvas.setAttribute('aria-label', `${title} 지도 불러오는 중`);
-      el(side, 'error').textContent = '지도를 불러오는 중입니다.';
+      el(side, 'error').textContent = '지도를 불러오는 중.';
       const [image, mask] = await Promise.all([
         loadImage(`maps/${mode}/${year}_${metric}.png?v=20261103-regional-compare1`),
         loadImage(`geo/masks/${kind}_${code}.png`)
@@ -150,7 +158,7 @@
     } catch (error) {
       if (current()) {
         el(side, 'map').getContext('2d').clearRect(0, 0, el(side, 'map').width, el(side, 'map').height);
-        el(side, 'error').textContent = '지역 지도 또는 경계 자료를 불러오지 못했습니다. 연결을 확인한 뒤 다시 선택해 주세요.';
+        el(side, 'error').textContent = '지역 지도 또는 경계 자료를 불러오지 못함. 연결 확인 후 다시 선택 필요.';
       }
     }
   }
