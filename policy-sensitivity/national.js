@@ -40,19 +40,42 @@
   function initialize(prefix, year, mode, metric){
     options(prefix+'-year',years,String(year)); options(prefix+'-mode',MODES,mode); options(prefix+'-metric',METRICS,metric);
   }
+  function updateCompareColors(){
+    const a=$('cmp-a-image'), b=$('cmp-b-image'), out=$('cmp-color-stats');
+    if(a.dataset.failed==='true'||b.dataset.failed==='true'){out.textContent='지도 로딩 실패로 색상 비교 불가함.';return}
+    if(!a.dataset.loaded || !b.dataset.loaded || a.dataset.loaded!==a.dataset.request || b.dataset.loaded!==b.dataset.request){
+      out.textContent='좌우 격자 색상 비교 중임.'; return;
+    }
+    const expectedMode=$('cmp-b-mode').value, expectedYear=$('cmp-b-year').value;
+    const expectedMetric=$('cmp-b-metric').value.replace('scenario_','');
+    if(a.dataset.loaded!==`${expectedMode}/${expectedYear}/baseline_${expectedMetric}` || b.dataset.loaded!==`${expectedMode}/${expectedYear}/scenario_${expectedMetric}`){
+      out.textContent='좌우 격자 색상 비교 중임.'; return;
+    }
+    try{
+      const c=document.createElement('canvas');c.width=a.naturalWidth;c.height=a.naturalHeight;
+      const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(a,0,0);const x=ctx.getImageData(0,0,c.width,c.height).data;
+      ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(b,0,0);const y=ctx.getImageData(0,0,c.width,c.height).data;
+      let total=0,different=0;
+      for(let i=0;i<x.length;i+=4){if(x[i+3]||y[i+3]){total++;if(x[i]!==y[i]||x[i+1]!==y[i+1]||x[i+2]!==y[i+2]||x[i+3]!==y[i+3])different++}}
+      out.textContent=`공통 척도에서 좌우 색상이 다른 격자 ${different.toLocaleString('ko-KR')}개 / ${total.toLocaleString('ko-KR')}개임. 같은 색상이어도 실제 값은 다를 수 있음.`;
+    }catch(_){out.textContent='공통 색상 척도 사용. 같은 색상이어도 실제 값은 다를 수 있음.'}
+  }
   initialize('national',2025,'birth_plus','population');
   initialize('cmp-a',2025,'birth_plus','baseline_population'); initialize('cmp-b',2025,'birth_plus','scenario_population'); options('cmp-b-metric',METRICS.filter(([v])=>v.startsWith('scenario_')),'scenario_population');
   function render(prefix){
     const mode=$(prefix+'-mode').value, y=$(prefix+'-year').value, metric=$(prefix+'-metric').value, img=$(prefix+'-image');
-    img.src=`maps/${mode}/${y}_${metric}.png?v=20261103-sector1`;
+    const request=`${mode}/${y}/${metric}`;
+    img.dataset.request=request;img.dataset.loaded='';img.dataset.failed='false';
     img.alt=`${y}년 ${modeNames[mode]} ${metricNames[metric]} 격자 지도`;
     $(prefix+'-title').textContent=prefix==='cmp-a'
       ? `${y}년 · 기준 · ${metricNames[metric]}`
       : `${y}년 · ${modeNames[mode]} · ${metricNames[metric]}`;
     $(prefix+'-legend').textContent=legend(metric);$(prefix+'-legend').dataset.scale=(metric==='population'||metric==='netflow'||metric.endsWith('_netflow'))?'diverging':'sequential';
     $(prefix+'-note').textContent=baseText(mode);
-    img.onerror=()=>{$(prefix+'-error').textContent='지도 파일을 불러오지 못함. 인터넷 연결 확인 필요.'};
-    img.onload=()=>{$(prefix+'-error').textContent=''};
+    img.onerror=()=>{$(prefix+'-error').textContent='지도 파일을 불러오지 못함. 인터넷 연결 확인 필요.';img.dataset.failed='true';if(prefix.startsWith('cmp-'))updateCompareColors()};
+    img.onload=()=>{$(prefix+'-error').textContent='';img.dataset.loaded=request;if(prefix.startsWith('cmp-'))updateCompareColors()};
+    img.src=`maps/${mode}/${y}_${metric}.png?v=20261103-sector1`;
+    if(prefix.startsWith('cmp-'))updateCompareColors();
   }
   for(const p of ['national','cmp-a','cmp-b']){
     for(const key of ['mode','year','metric'])$(p+'-'+key).addEventListener('change',()=>render(p));
@@ -67,17 +90,19 @@
     $('cmp-a-metric').value=$('cmp-b-metric').value.replace('scenario_','baseline_');render('cmp-a');
     const mode=$('cmp-b-mode').value, year=$('cmp-b-year').value;
     const metric=$('cmp-b-metric').value.replace('scenario_','');
-    const available=metric==='population'||metric==='netflow';
+    const files={population:'population',netflow:'netflow',inflow:'inflow_delta',outflow:'outflow_delta'};
+    const labels={population:'인구',inflow:'유입 배분',outflow:'유출 배분',netflow:'순이동 배분'};
+    const available=Object.hasOwn(files,metric);
     $('cmp-diff').hidden=!available;
     if(available){
       const img=$('cmp-diff-image');
-      $('cmp-diff-title').textContent=`${year}년 · ${modeNames[mode]} · ${metric==='population'?'인구':'순이동 배분'} 차이 (가정 − 기준)`;
-      $('cmp-diff-legend').textContent=legend(metric);
+      $('cmp-diff-title').textContent=`기준 대비 변화량 (가정 − 기준) · ${year}년 · ${modeNames[mode]} · ${labels[metric]}`;
+      $('cmp-diff-legend').textContent=metric==='population'?legend('population'):'이동 배분 차이 · 슬롯 사건 · 대칭로그, 선형구간 ±0.1, 범위 ±100 (초과값 끝색)';
       $('cmp-diff-legend').dataset.scale='diverging';
       img.alt=$('cmp-diff-title').textContent+' 격자 지도';
       img.onerror=()=>{$('cmp-diff-error').textContent='차이 지도 파일을 불러오지 못함. 인터넷 연결 확인 필요.'};
       img.onload=()=>{$('cmp-diff-error').textContent=''};
-      img.src=`maps/${mode}/${year}_${metric}.png?v=20261103-sector1`;
+      img.src=`maps/${mode}/${year}_${files[metric]}.png?v=20261103-flowdiff`;
     }
   }
   for(const field of ['mode','year','metric'])$('cmp-b-'+field).addEventListener('change',synchronizeComparison);
