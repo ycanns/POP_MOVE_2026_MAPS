@@ -3,8 +3,8 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const MODES = [
-    ['birth_plus','출산율 +20%'],['birth_minus','출산율 -20%'],
-    ['sejong_proxy','세종 10% 가상 재배치'],['industry','산업 거점 사업체·종사자 +10%']
+    ['birth_plus','출산율 연 +1%'],['birth_minus','출산율 연 -1%'],
+    ['sejong_historical','세종 과거 순이동 역배분'],['industry_jeonnam','전남 데이터센터'],['industry_changwon','창원 AI 제조'],['industry_gangwon','강원 디지털헬스']
   ];
   const METRICS = [
     ['population','인구 차이'], ['netflow','순이동 배분 차이'],
@@ -14,8 +14,8 @@
     ['baseline_netflow','기준 순이동 배분'], ['scenario_netflow','가정 순이동 배분']
   ];
   const modeNames=Object.fromEntries(MODES), metricNames=Object.fromEntries(METRICS);
-  const baseText = mode => mode==='industry'
-    ? '산업 시나리오는 사업체·종사자 입력을 사용하는 별도 XGBoost 기준선입니다. 각 경로의 시도 총량은 동일하게 정산됩니다.'
+  const baseText = mode => mode.startsWith('industry_')
+    ? '산업 시나리오는 2024년 대상 지역의 관측 관련 업종 종사자 수 1%를 매년 대상 지역 밖의 관측 종사자 분포에서 이전하는 가정입니다. 업종별 결측이 많아 이전 규모는 불확실하며, 사업체 XGBoost의 입력 변화 반응은 0이고 GAT 권역 이동 총량은 고정됩니다.'
     : '인구이력 XGBoost 기준선입니다. 출산·세종 가정은 공식 시도 총량에서 벗어날 수 있습니다.';
   function options(id, pairs, value){ const el=$(id);el.replaceChildren(...pairs.map(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;return o}));el.value=value }
   const years=Array.from({length:28},(_,i)=>[String(2025+i),`${2025+i}년`]);
@@ -41,10 +41,10 @@
     options(prefix+'-year',years,String(year)); options(prefix+'-mode',MODES,mode); options(prefix+'-metric',METRICS,metric);
   }
   initialize('national',2025,'birth_plus','population');
-  initialize('cmp-a',2025,'birth_plus','population'); initialize('cmp-b',2052,'birth_minus','population');
+  initialize('cmp-a',2025,'birth_plus','baseline_population'); initialize('cmp-b',2025,'birth_plus','scenario_population'); options('cmp-b-metric',METRICS.filter(([v])=>v.startsWith('scenario_')),'scenario_population');
   function render(prefix){
     const mode=$(prefix+'-mode').value, y=$(prefix+'-year').value, metric=$(prefix+'-metric').value, img=$(prefix+'-image');
-    img.src=`maps/${mode}/${y}_${metric}.png`;
+    img.src=`maps/${mode}/${y}_${metric}.png?v=20261103-sector1`;
     img.alt=`${y}년 ${modeNames[mode]} ${metricNames[metric]} 격자 지도`;
     $(prefix+'-title').textContent=`${y}년 · ${modeNames[mode]} · ${metricNames[metric]}`;
     $(prefix+'-legend').textContent=legend(metric);$(prefix+'-legend').dataset.scale=(metric==='population'||metric==='netflow'||metric.endsWith('_netflow'))?'diverging':'sequential';
@@ -60,6 +60,12 @@
   function moveYear(step){const el=$('national-year');el.value=String(Math.max(2025,Math.min(2052,Number(el.value)+step)));render('national')}
   $('national-prev').addEventListener('click',()=>moveYear(-1));$('national-next').addEventListener('click',()=>moveYear(1));
   $('national-play').addEventListener('click',()=>{if(timer){clearInterval(timer);timer=null;$('national-play').textContent='순차 재생'}else{$('national-play').textContent='일시 정지';timer=setInterval(()=>{if($('national-year').value==='2052')$('national-year').value='2025';else $('national-year').value=String(Number($('national-year').value)+1);render('national')},1500)}});
+  function synchronizeComparison(){
+    $('cmp-a-mode').value=$('cmp-b-mode').value;$('cmp-a-year').value=$('cmp-b-year').value;
+    $('cmp-a-metric').value=$('cmp-b-metric').value.replace('scenario_','baseline_');render('cmp-a');
+  }
+  for(const field of ['mode','year','metric'])$('cmp-b-'+field).addEventListener('change',synchronizeComparison);
+  synchronizeComparison();
   for(const p of ['national','cmp'])for(const field of ['boundary','names'])$(p+'-'+field).addEventListener('change',()=>{
     for(const s of p==='national'?['national']:['cmp-a','cmp-b'])visibility(s+'-svg',p);
   });

@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const fmt = n => Number(n).toLocaleString('ko-KR', {maximumFractionDigits: 1});
   const geo = 'geo/';
-  const modeNames = {birth_plus:'출산율 +20%',birth_minus:'출산율 -20%',sejong_proxy:'세종 10% 가상 재배치',industry:'산업 거점 사업체·종사자 +10%'};
+  const modeNames = {birth_plus:'출산율 연 +1%',birth_minus:'출산율 연 -1%',sejong_historical:'세종 순이동 역배분',industry_jeonnam:'전남 데이터센터',industry_changwon:'창원 AI 제조',industry_gangwon:'강원 디지털헬스'};
   const metricNames = {population:'인구 차이',netflow:'순이동 배분 차이',baseline_population:'기준 인구',scenario_population:'가정 인구',baseline_inflow:'기준 유입 배분',scenario_inflow:'가정 유입 배분',baseline_outflow:'기준 유출 배분',scenario_outflow:'가정 유출 배분',baseline_netflow:'기준 순이동 배분',scenario_netflow:'가정 순이동 배분'};
   let catalog, boundaries, ready, request = 0;
   const getJSON = path => fetch(path).then(r => { if (!r.ok) throw new Error(path); return r.json(); });
@@ -46,7 +46,7 @@
       $('region-note').textContent=`선택한 ${item.name}에 겹치는 ${fmt(item.grids)}개 격자를 확대합니다. 경계에 걸친 격자는 다른 지역의 부분을 포함한 격자 전체값이므로 표의 지역별 합계와 일치하지 않을 수 있습니다. 군위군은 대구에 표시되며 기준 시도 총량 정산은 경북 기준입니다.`;
       $('region-legend').textContent=metric==='population'?'인구 차이 · 명 · 대칭로그 (±1,000, 선형 ±1)':metric==='netflow'?'순이동 배분 차이 · 슬롯 사건 · 대칭로그 (±100, 선형 ±0.1)':metric.endsWith('_population')?'인구 · 명 · 로그 (0.01~100,000, 0은 흰색)':metric.endsWith('_netflow')?'순이동 배분 · 슬롯 사건 · 대칭로그 (±1,200, 선형 ±1)':'유입·유출 배분 · 슬롯 사건 · 로그 (0.01~6,000, 0은 흰색)';
       $('region-legend').dataset.scale=(metric==='population'||metric==='netflow'||metric.endsWith('_netflow'))?'diverging':'sequential';
-      const [image,mask]=await Promise.all([loadImage(`maps/${mode}/${year}_${metric}.png`),loadImage(`${geo}masks/${kind}_${code}.png`)]); if(call!==request)return;
+      const [image,mask]=await Promise.all([loadImage(`maps/${mode}/${year}_${metric}.png?v=20261103-sector1`),loadImage(`${geo}masks/${kind}_${code}.png`)]); if(call!==request)return;
       const buffer=document.createElement('canvas');buffer.width=catalog.width;buffer.height=catalog.height;
       const ctx=buffer.getContext('2d');ctx.drawImage(image,0,0);ctx.globalCompositeOperation='destination-in';ctx.drawImage(mask,0,0);
       let [x0,y0,x1,y1]=item.bbox;
