@@ -13,8 +13,9 @@
 | GAT 순이동 연결 인구 비교 | [GAT 연결 비교 보기](https://ycanns.github.io/POP_MOVE_2026_MAPS/population-gat/) |
 | 격자 인구이동 배분 시나리오 · grid-flow | [격자 지도 보기](https://ycanns.github.io/POP_MOVE_2026_MAPS/grid-flow/) |
 | 격자 인구이동 배분 시나리오 · cnn-gat | [CNN·GAT 지도 보기](https://ycanns.github.io/POP_MOVE_2026_MAPS/cnn-gat/) |
+| 정책 시뮬레이션 · XGBoost×GAT | [정책 민감도 대시보드 열기](https://ycanns.github.io/POP_MOVE_2026_MAPS/policy-sensitivity/) |
 
-각 화면의 관측·시나리오 구분과 해석상 주의사항을 함께 확인해 주세요.
+정책 민감도는 가정에 따른 조건부 격자 배분 결과이며 공식 시군구 추계나 정책의 인과효과가 아닙니다. 각 화면의 관측·시나리오 구분과 해석상 주의사항을 함께 확인해 주세요.
 
 ---
 
